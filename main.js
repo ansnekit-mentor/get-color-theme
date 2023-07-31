@@ -1,6 +1,10 @@
 const initApp = () => {
-    const colors = [];
-    const $cols = document.querySelectorAll('.colors__col');
+    console.log(1111);
+    let isHashParams = false;
+
+    if (window.location.hash.length > 1) {
+        isHashParams = true;
+    }
 
     const gerenerateRandomColor = () => {
         // RGB
@@ -17,27 +21,31 @@ const initApp = () => {
         return '#' + color;
     };
     
-    const setRandomColors = ($columns) => {
-        $columns.forEach(($col) => {
+    const setRandomColors = (isHashParams) => {
+        const $columns = document.querySelectorAll('.colors__col');
+        const colors = isHashParams ? parseFromHashParams() : [];
+        $columns.forEach(($col, index) => {
             const $text = $col.querySelector('.colors__text');
             const $toggleBlockedIcon = $col.querySelector('.colors__lock-icon');
             let isLocked = $toggleBlockedIcon ? $toggleBlockedIcon.classList.contains('lock') : false; 
-            const color = gerenerateRandomColor();
+            const color = isHashParams ?  colors[index]: gerenerateRandomColor();
     
             if (isLocked) {
+                colors[index] = color;
                 return;
             }
     
             $text.textContent = color;
             $col.style.background = color;
         });
+        updateColorsHash(colors)
     }
     
     const handleKeydown = (evt) => {
         evt.preventDefault();
         const CODE_SPACE = 32;
         if (evt.keyCode === CODE_SPACE) {
-            setRandomColors($cols);
+            setRandomColors();
         }
     };
     
@@ -54,14 +62,14 @@ const initApp = () => {
             $textBtn = targetEl;
         }
         if ($lockBtn && colorHash) {
-            changeBlockStatus($lockBtn, colorHash);
+            changeBlockStatus($lockBtn);
         }
         if ($textBtn) {
-            copyToClipboard(evt, $textBtn)
+            copyToClipboard($textBtn);
         }
     }
     
-    const changeBlockStatus = ($lockBtn, colorHash) => {
+    const changeBlockStatus = ($lockBtn) => {
         let iconTemplate = `
             <img
                 class="colors__lock-icon unlock"
@@ -78,11 +86,10 @@ const initApp = () => {
                     alt="Заблокировано"
                     width="30"
                     height="30">`;
-            colors.push(colorHash);
         }
         $lockBtn.innerHTML = iconTemplate;
     }
-    const copyToClipboard = (e, $textHash) => {
+    const copyToClipboard = ($textHash) => {
         if (!navigator) {
             return;
         }
@@ -106,8 +113,23 @@ const initApp = () => {
             $info.parentNode.removeChild($info);
         }, 1500);
     }
+    const updateColorsHash = (colors) => {
+        if (colors.length === 6) {
+            window.location.hash = colors
+                .map((color) => color.toString().substring(1))
+                .join('-');
+        }
+        
+    };
 
-    setRandomColors($cols);
+    const parseFromHashParams = () => {
+        return window.location.hash
+            .substring(1)
+            .split('-')
+            .map((color) => '#' + color.toString());
+    };
+
+    setRandomColors(isHashParams);
     
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleKeydown);
